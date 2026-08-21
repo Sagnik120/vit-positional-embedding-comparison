@@ -1,15 +1,18 @@
-"""
-config.py
+import os
 
-Single source of truth for hyperparameters shared by BOTH the original and
-modified ViT training runs. Keeping this identical (except for the PE
-mechanism itself, which lives entirely inside the model classes) is what
-makes the original-vs-modified comparison valid.
-
-Do not hardcode these values anywhere else -- import from here.
-"""
+# Single source of truth for hyperparameters shared by BOTH the original and
+# modified ViT training runs. Keeping this identical (except for the PE
+# mechanism itself, which lives entirely inside the model classes) is what
+# makes the original-vs-modified comparison valid.
+# 
+# Do not hardcode these values anywhere else -- import from here.
+# """
 
 from dataclasses import dataclass
+
+# Get repository root absolute path
+_current_dir = os.path.dirname(os.path.abspath(__file__))
+_repo_root = os.path.abspath(os.path.join(_current_dir, "..", ".."))
 
 
 @dataclass
@@ -44,7 +47,7 @@ class TrainConfig:
 
 @dataclass
 class DataConfig:
-    data_root: str = "./data/cifar10"
+    data_root: str = os.path.join(_repo_root, "data", "cifar10")
     mean: tuple = (0.4914, 0.4822, 0.4465)
     std: tuple = (0.2470, 0.2435, 0.2616)
     random_crop_padding: int = 4
