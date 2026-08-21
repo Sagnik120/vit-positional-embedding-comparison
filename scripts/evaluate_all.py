@@ -1,0 +1,141 @@
+"""
+evaluate_all.py
+
+Reads the training logs and test-accuracy JSONs already produced for both
+variants (results/baseline, results/modified_rope) and generates:
+
+  - results/comparison/combined_loss_curves.png       (REQUIRED deliverable:
+        train+val loss for BOTH variants overlaid on one plot)
+  - results/comparison/combined_accuracy_curves.png
+  - results/comparison/top1_test_accuracy_comparison.json  (REQUIRED deliverable)
+  - results/comparison/generalization_gap_comparison.csv
+  - results/comparison/comparison_table.md
+
+Run AFTER both `train.py` runs and both `evaluate.py` runs have completed.
+"""
+
+import json
+import os
+
+import matplotlib.pyplot as plt
+import pandas as pd
+
+ROOT = os.path.join(os.path.dirname(__file__), "..")
+BASELINE_DIR = os.path.join(ROOT, "results", "baseline")
+MODIFIED_DIR = os.path.join(ROOT, "results", "modified_rope")
+COMPARISON_DIR = os.path.join(ROOT, "results", "comparison")
+
+
+def load_log(variant_dir):
+    path = os.path.join(variant_dir, "logs", "train_log.csv")
+    return pd.read_csv(path)
+
+
+def load_json(path):
+    with open(path) as f:
+        return json.load(f)
+
+
+def plot_combined_loss(df_base, df_mod):
+    fig, ax = plt.subplots(figsize=(9, 6))
+    ax.plot(df_base["epoch"], df_base["train_loss"], label="Original - train", color="tab:blue", linestyle="-")
+    ax.plot(df_base["epoch"], df_base["val_loss"], label="Original - val", color="tab:blue", linestyle="--")
+    ax.plot(df_mod["epoch"], df_mod["train_loss"], label="Modified (RoPE) - train", color="tab:orange", linestyle="-")
+    ax.plot(df_mod["epoch"], df_mod["val_loss"], label="Modified (RoPE) - val", color="tab:orange", linestyle="--")
+    ax.set_xlabel("Epoch")
+    ax.set_ylabel("Loss")
+    ax.set_title("Training / Validation Loss: Original vs. Modified (RoPE) ViT")
+    ax.legend()
+    ax.grid(alpha=0.3)
+    fig.tight_layout()
+    out_path = os.path.join(COMPARISON_DIR, "combined_loss_curves.png")
+    fig.savefig(out_path, dpi=200)
+    print(f"[done] wrote {out_path}")
+
+
+def plot_combined_accuracy(df_base, df_mod):
+    fig, ax = plt.subplots(figsize=(9, 6))
+    ax.plot(df_base["epoch"], df_base["train_acc"], label="Original - train", color="tab:blue", linestyle="-")
+    ax.plot(df_base["epoch"], df_base["val_acc"], label="Original - val", color="tab:blue", linestyle="--")
+    ax.plot(df_mod["epoch"], df_mod["train_acc"], label="Modified (RoPE) - train", color="tab:orange", linestyle="-")
+    ax.plot(df_mod["epoch"], df_mod["val_acc"], label="Modified (RoPE) - val", color="tab:orange", linestyle="--")
+    ax.set_xlabel("Epoch")
+    ax.set_ylabel("Accuracy")
+    ax.set_title("Training / Validation Accuracy: Original vs. Modified (RoPE) ViT")
+    ax.legend()
+    ax.grid(alpha=0.3)
+    fig.tight_layout()
+    out_path = os.path.join(COMPARISON_DIR, "combined_accuracy_curves.png")
+    fig.savefig(out_path, dpi=200)
+    print(f"[done] wrote {out_path}")
+
+
+def main():
+    os.makedirs(COMPARISON_DIR, exist_ok=True)
+
+    df_base = load_log(BASELINE_DIR)
+    df_mod = load_log(MODIFIED_DIR)
+
+    plot_combined_loss(df_base, df_mod)
+    plot_combined_accuracy(df_base, df_mod)
+
+    test_base = load_json(os.path.join(BASELINE_DIR, "metrics", "test_accuracy.json"))
+    test_mod = load_json(os.path.join(MODIFIED_DIR, "metrics", "test_accuracy.json"))
+
+    comparison = {
+        "original": {
+            "top1_test_accuracy_pct": test_base["top1_test_accuracy_pct"],
+            "best_val_acc": test_base["best_val_acc"],
+            "checkpoint_epoch": test_base["checkpoint_epoch"],
+        },
+        "modified_rope": {
+            "top1_test_accuracy_pct": test_mod["top1_test_accuracy_pct"],
+            "best_val_acc": test_mod["best_val_acc"],
+            "checkpoint_epoch": test_mod["checkpoint_epoch"],
+        },
+        "delta_top1_test_accuracy_pct": round(
+            test_mod["top1_test_accuracy_pct"] - test_base["top1_test_accuracy_pct"], 2
+        ),
+    }
+    out_json = os.path.join(COMPARISON_DIR, "top1_test_accuracy_comparison.json")
+    with open(out_json, "w") as f:
+        json.dump(comparison, f, indent=2)
+    print(f"[done] wrote {out_json}")
+
+    # generalization gap = train_acc - val_acc at each variant's best epoch
+    def gap_at_best(df, best_epoch):
+        row = df[df["epoch"] == best_epoch].iloc[0]
+        return row["train_acc"] - row["val_acc"]
+
+    gap_base = gap_at_best(df_base, test_base["checkpoint_epoch"])
+    gap_mod = gap_at_best(df_mod, test_mod["checkpoint_epoch"])
+
+    gap_df = pd.DataFrame([
+        {"variant": "original", "generalization_gap_at_best_epoch": gap_base},
+        {"variant": "modified_rope", "generalization_gap_at_best_epoch": gap_mod},
+    ])
+    gap_csv = os.path.join(COMPARISON_DIR, "generalization_gap_comparison.csv")
+    gap_df.to_csv(gap_csv, index=False)
+    print(f"[done] wrote {gap_csv}")
+
+    table_md = f"""# Comparison Table (auto-generated by scripts/evaluate_all.py)
+
+| Metric | Original ViT | Modified ViT (RoPE) |
+|---|---|---|
+| Top-1 Test Accuracy | {test_base['top1_test_accuracy_pct']}% | {test_mod['top1_test_accuracy_pct']}% |
+| Best Val Accuracy | {test_base['best_val_acc']:.4f} | {test_mod['best_val_acc']:.4f} |
+| Best Epoch | {test_base['checkpoint_epoch']} | {test_mod['checkpoint_epoch']} |
+| Generalization Gap (train_acc - val_acc @ best epoch) | {gap_base:.4f} | {gap_mod:.4f} |
+
+Delta (Modified - Original) Top-1 Test Accuracy: **{comparison['delta_top1_test_accuracy_pct']} pp**
+"""
+    table_path = os.path.join(COMPARISON_DIR, "comparison_table.md")
+    with open(table_path, "w") as f:
+        f.write(table_md)
+    print(f"[done] wrote {table_path}")
+
+    print("\n" + table_md)
+
+
+if __name__ == "__main__":
+    main()

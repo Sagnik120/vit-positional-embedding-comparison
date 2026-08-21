@@ -1,0 +1,8 @@
+data/cifar10/*
+!data/.gitkeep
+results/*/checkpoints/*.pt
+results/*/checkpoints/*.pth
+!results/*/checkpoints/.gitkeep
+__pycache__/
+*.pyc
+.DS_Store
