@@ -18,4 +18,11 @@ Final numbers and where every deliverable artifact lives, once
 
 ## Final numbers snapshot
 
-`<paste results/comparison/comparison_table.md contents here once available>`
+| Metric | Original ViT | Modified ViT (RoPE) |
+|---|---|---|
+| Top-1 Test Accuracy | 83.73% | 86.77% |
+| Best Val Accuracy | 0.8428 | 0.8706 |
+| Best Epoch | 80 | 90 |
+| Generalization Gap (train_acc - val_acc @ best epoch) | 0.0547 | 0.0828 |
+
+Delta (Modified - Original) Top-1 Test Accuracy: **3.04 pp**
