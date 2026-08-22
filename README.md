@@ -1,129 +1,99 @@
-# ViT Positional Embedding Comparison
+# 🚀 ViT Positional Embedding Comparison
 
-Comparing the **original ViT positional embedding** (learned additive 1D,
-as in Dosovitskiy et al., 2021, *"An Image is Worth 16x16 Words"*) against
-a **modified 2D Rotary Position Embedding (RoPE)** variant, trained from
-scratch on CIFAR-10.
+![PyTorch](https://img.shields.io/badge/PyTorch-EE4C2C?style=for-the-badge&logo=pytorch&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
+![Transformers](https://img.shields.io/badge/Transformers-FF9D00?style=for-the-badge&logo=huggingface&logoColor=white)
 
-- GitHub: `Sagnik120/vit-positional-embedding-comparison`
-- Author's Hugging Face: `Sagnik120`
-- Author's Kaggle: `chandrasagnik027`
+![Architecture Diagram](architecture_diagram.png)
 
-See `CHANGES.md` for the exact line-numbered diff between the two model
-implementations, and `docs/` for the full process log.
+## 📌 Problem Statement
+The goal of this project is to compare two variants of the Vision Transformer (ViT) on the CIFAR-10 dataset:
+1. **Original ViT:** Uses the standard learned additive 1D positional embedding (as described in Dosovitskiy et al., 2021).
+2. **Modified ViT (RoPE):** Replaces the additive positional embedding module with a multiplicative **2D Rotary Position Embedding (RoPE)** scheme.
+
+Both variants share exactly the same hyperparameters (model size, patch size, depth) and are trained entirely from scratch (no pre-trained weights) to optimize their respective validation performance.
 
 ---
 
-## 1. Setup
+## 🎯 Deliverables (Quick Links)
+
+Faculty and reviewers can use the clickable buttons below to instantly jump to the required deliverables in the codebase:
+
+[![Deliverable 1: Top-1 Test Accuracy](https://img.shields.io/badge/Deliverable_1-Top--1_Test_Accuracy-blue?style=for-the-badge)](results/comparison/top1_test_accuracy_comparison.json)
+[![Deliverable 2: Combined Loss Curves](https://img.shields.io/badge/Deliverable_2-Combined_Loss_Curves-green?style=for-the-badge)](results/comparison/combined_loss_curves.png)
+[![Deliverable 3: Written Justification](https://img.shields.io/badge/Deliverable_3-Written_Justification-orange?style=for-the-badge)](report/justification.md)
+[![Deliverable 4: Written Discussion](https://img.shields.io/badge/Deliverable_4-Written_Discussion-purple?style=for-the-badge)](report/discussion.md)
+[![Deliverable 5: Line-Numbered Changes](https://img.shields.io/badge/Deliverable_5-Line--Numbered_Changes_README-red?style=for-the-badge)](CHANGES.md)
+
+### 🧑‍💻 Full Codebases
+* **Original ViT Codebase:** [`src/vit_original/vit.py`](src/vit_original/vit.py)
+* **Modified ViT Codebase:** [`src/vit_modified/vit.py`](src/vit_modified/vit.py) & [`src/vit_modified/positional_embeddings.py`](src/vit_modified/positional_embeddings.py)
+
+---
+
+## 🛠️ How to Clone and Setup
 
 ```bash
 git clone https://github.com/Sagnik120/vit-positional-embedding-comparison.git
 cd vit-positional-embedding-comparison
+```
 
-python3 -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
-
-pip install --upgrade pip
+### Windows Setup
+```powershell
+python -m venv .venv
+.venv\Scripts\activate
+python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-See `docs/03_environment_setup.md` for MacBook (Apple Silicon / MPS)
-specific notes.
+### macOS / Linux Setup
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip3 install --upgrade pip
+pip3 install -r requirements.txt
+```
 
-## 2. Download CIFAR-10
+---
 
+## 🚀 How to Run the Pipeline
+
+### 1. Download CIFAR-10
 ```bash
 python scripts/download_data.py
 ```
 
-## 3. Run diagnostics (do this before any real training run)
-
+### 2. Run Diagnostics (Recommended)
+Validates architecture parity and runs smoke tests. All checks must pass.
 ```bash
 python scripts/run_diagnostics.py
 ```
 
-This validates imports, device selection, config sanity, dataset shapes,
-forward/backward passes for BOTH models, output-shape equality, parameter
-count parity, RoPE numerical correctness, one-batch overfit smoke tests,
-and a full mini train/val loop — end to end, in under a minute. All 15
-checks must PASS before proceeding.
-
-## 4. Train both variants
-
+### 3. Train Both Models
 ```bash
-bash scripts/train_baseline.sh      # original ViT -> results/baseline/
-bash scripts/train_modified.sh      # modified ViT (RoPE) -> results/modified_rope/
+bash scripts/train_baseline.sh      # Trains the original ViT
+bash scripts/train_modified.sh      # Trains the RoPE ViT
 ```
+*(Alternatively, run `bash scripts/run_all.sh` to execute the entire pipeline automatically).*
 
-Or run everything (download → diagnostics → train both → evaluate → plots)
-in one command:
-
-```bash
-bash scripts/run_all.sh
-```
-
-## 5. Evaluate on the test set
-
+### 4. Evaluate and Generate Comparison
 ```bash
 cd src
 python -m common.evaluate --model original --out ../results/baseline
 python -m common.evaluate --model modified --out ../results/modified_rope
 cd ..
-```
-
-## 6. Generate comparison plots and tables
-
-```bash
 python scripts/evaluate_all.py
 ```
-
-Produces:
-- `results/comparison/combined_loss_curves.png` — train+val loss, both variants, one plot
-- `results/comparison/combined_accuracy_curves.png`
-- `results/comparison/top1_test_accuracy_comparison.json`
-- `results/comparison/generalization_gap_comparison.csv`
-- `results/comparison/comparison_table.md`
+This will automatically evaluate the models and populate the `results/comparison/` folder with the final metrics and plots!
 
 ---
 
-## Repository structure
+## 📊 Final Results Summary
 
-```
-src/
-├── vit_original/vit.py            # unmodified reference ViT (learned 1D PE)
-├── vit_modified/
-│   ├── vit.py                     # RoPE variant (see CHANGES.md for diff)
-│   └── positional_embeddings.py   # PE registry (learned_1d, rope_2d, extensible)
-└── common/
-    ├── config.py                  # shared hyperparameters (identical for both runs)
-    ├── dataset.py                 # CIFAR-10 loading + augmentation
-    ├── train.py                   # training loop (--model original|modified)
-    ├── evaluate.py                # test-set Top-1 accuracy
-    └── utils.py                   # seeding, device selection, checkpointing, logging
+| Metric | Original ViT | Modified ViT (RoPE) |
+|---|---|---|
+| **Top-1 Test Accuracy** | 83.73% | **86.77%** |
+| **Best Val Accuracy** | 0.8428 | **0.8706** |
+| **Best Epoch** | 80 | 90 |
 
-scripts/
-├── download_data.py               # CIFAR-10 download
-├── run_diagnostics.py             # 15-point pipeline sanity check
-├── train_baseline.sh / train_modified.sh / run_all.sh
-└── evaluate_all.py                # comparison plots + tables
-
-results/
-├── baseline/           {checkpoints, logs, visualizations, metrics}
-├── modified_rope/      {checkpoints, logs, visualizations, metrics}
-└── comparison/         combined plots, comparison_table.md
-
-report/
-├── justification.md    # required: why RoPE, what was expected (<=1 page)
-└── discussion.md        # required: results vs. expectation (<=1 page)
-
-docs/                    # process log, kept in markdown, chronological
-```
-
-## Deliverables checklist
-
-- [x] Top-1 test accuracy for both variants → `results/comparison/top1_test_accuracy_comparison.json`
-- [x] Train/val loss curves for both, one plot → `results/comparison/combined_loss_curves.png`
-- [x] Written justification (≤1 page) → `report/justification.md`
-- [x] Written discussion (≤1 page) → `report/discussion.md`
-- [x] Full codebases with line numbers → `src/vit_original/vit.py`, `src/vit_modified/vit.py`
-- [x] README of changes with line numbers → `CHANGES.md`
+**Delta: +3.04 percentage points in favor of RoPE.**
