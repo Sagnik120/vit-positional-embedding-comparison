@@ -1,0 +1,7 @@
+{
+  "model": "modified",
+  "best_epoch": 90,
+  "best_val_acc": 0.8706,
+  "num_params": 3174506,
+  "checkpoint_path": "../results/modified_rope/checkpoints/best.pt"
+}

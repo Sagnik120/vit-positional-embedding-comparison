@@ -1,0 +1,7 @@
+{
+  "model": "original",
+  "best_epoch": 80,
+  "best_val_acc": 0.8428,
+  "num_params": 3191146,
+  "checkpoint_path": "../results/baseline/checkpoints/best.pt"
+}

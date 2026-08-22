@@ -1,0 +1,13 @@
+{
+  "original": {
+    "top1_test_accuracy_pct": 83.73,
+    "best_val_acc": 0.8428,
+    "checkpoint_epoch": 80
+  },
+  "modified_rope": {
+    "top1_test_accuracy_pct": 86.77,
+    "best_val_acc": 0.8706,
+    "checkpoint_epoch": 90
+  },
+  "delta_top1_test_accuracy_pct": 3.04
+}

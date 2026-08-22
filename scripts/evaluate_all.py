@@ -28,7 +28,10 @@ COMPARISON_DIR = os.path.join(ROOT, "results", "comparison")
 
 def load_log(variant_dir):
     path = os.path.join(variant_dir, "logs", "train_log.csv")
-    return pd.read_csv(path)
+    df = pd.read_csv(path, header=None)
+    if len(df.columns) == 7:
+        df.columns = ["epoch", "train_loss", "train_acc", "val_loss", "val_acc", "lr", "epoch_time_sec"]
+    return df
 
 
 def load_json(path):

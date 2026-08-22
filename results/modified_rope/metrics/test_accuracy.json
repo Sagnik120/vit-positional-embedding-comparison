@@ -1,0 +1,8 @@
+{
+  "model": "modified",
+  "test_loss": 0.4715646188735962,
+  "top1_test_accuracy": 0.8677,
+  "top1_test_accuracy_pct": 86.77,
+  "checkpoint_epoch": 90,
+  "best_val_acc": 0.8706
+}
